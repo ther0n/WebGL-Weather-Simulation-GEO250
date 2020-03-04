@@ -31,14 +31,14 @@ resizeCanvas();
 
 let config = {
     DRAW_BUFFER: 'cloud',
-    SIM_RESOLUTION: 128,
-    CLOUD_RESOLUTION: 128,
+    SIM_RESOLUTION: 256,
+    CLOUD_RESOLUTION: 512,
     CAPTURE_RESOLUTION: 512,
     DENSITY_DISSIPATION: 0.1,
-    VELOCITY_DISSIPATION: 0.1,
+    VELOCITY_DISSIPATION: 0.02,
     PRESSURE: 0.8,
-    PRESSURE_ITERATIONS: 20,
-    CURL: 3,
+    PRESSURE_ITERATIONS: 1,
+    CURL: 1,
     SPLAT_RADIUS: 0.1,
     SPLAT_FORCE: 250,
     PAUSED: false,
@@ -1190,7 +1190,7 @@ function correctDeltaY (delta) {
 
 function generateColor () {
     //let c = HSVtoRGB(Math.random(), 1.0, 1.0);
-    let c = HSVtoRGB(0.5, 1.0, 1.0);
+    let c = HSVtoRGB(0.0, 0.0, 0.25);
     c.r *= 0.15;
     c.g *= 0.15;
     c.b *= 0.15;
