@@ -30,16 +30,17 @@ const canvas = document.getElementsByTagName('canvas')[0];
 resizeCanvas();
 
 let config = {
+    DRAW_BUFFER: 'cloud',
     SIM_RESOLUTION: 128,
-    CLOUD_RESOLUTION: 1024,
+    CLOUD_RESOLUTION: 128,
     CAPTURE_RESOLUTION: 512,
     DENSITY_DISSIPATION: 0.1,
     VELOCITY_DISSIPATION: 0.1,
     PRESSURE: 0.8,
     PRESSURE_ITERATIONS: 20,
-    CURL: 5,
-    SPLAT_RADIUS: 0.25,
-    SPLAT_FORCE: 1000,
+    CURL: 3,
+    SPLAT_RADIUS: 0.1,
+    SPLAT_FORCE: 250,
     PAUSED: false,
     BACK_COLOR: { r: 126, g: 192, b: 238 },
     TRANSPARENT: false,
@@ -163,10 +164,11 @@ function supportRenderTextureFormat (gl, internalFormat, format, type) {
 
 function startGUI () {
     var gui = new dat.GUI({ width: 300 });
-    gui.add(config, 'CLOUD_RESOLUTION', { 'high': 1024, 'medium': 512, 'low': 256, 'very low': 128 }).name('quality').onFinishChange(initFramebuffers);
+    gui.add(config, 'DRAW_BUFFER', {'condensation/clouds': 'cloud', 'velocity': 'velocity', 'pressure': 'pressure'}).name('display');
+    gui.add(config, 'CLOUD_RESOLUTION', { '1024': 1024, '512': 512, '256': 256, '128': 128 }).name('cloud resolution').onFinishChange(initFramebuffers);
     gui.add(config, 'SIM_RESOLUTION', { '32': 32, '64': 64, '128': 128, '256': 256 }).name('sim resolution').onFinishChange(initFramebuffers);
-    gui.add(config, 'DENSITY_DISSIPATION', 0, 1.0).name('density diffusion');
-    gui.add(config, 'VELOCITY_DISSIPATION', 0, 1.0).name('velocity diffusion');
+    gui.add(config, 'DENSITY_DISSIPATION', 0, 1.0).name('cloud dissipation');
+    gui.add(config, 'VELOCITY_DISSIPATION', 0, 1.0).name('velocity dissipation');
     gui.add(config, 'PRESSURE', 0.0, 1.0).name('pressure');
     gui.add(config, 'CURL', 0, 10).name('vorticity').step(1);
     gui.add(config, 'SPLAT_RADIUS', 0.01, 1.0).name('splat radius');
@@ -474,10 +476,10 @@ const displayShaderSource = `
     uniform vec2 ditherScale;
     uniform vec2 texelSize;
 
-    vec3 linearToGamma (vec3 color) {
-        color = max(color, vec3(0));
-        return max(1.055 * pow(color, vec3(0.416666667)) - 0.055, vec3(0));
-    }
+    //vec3 linearToGamma (vec3 color) {
+    //    color = max(color, vec3(0));
+    //    return max(1.055 * pow(color, vec3(0.416666667)) - 0.055, vec3(0));
+    //}
 
     void main () {
         vec3 c = texture2D(uTexture, vUv).rgb;
@@ -858,7 +860,7 @@ function updateKeywords () {
 
 updateKeywords();
 initFramebuffers();
-multipleSplats(parseInt(Math.random() * 20) + 5);
+multipleSplats(parseInt(Math.random() * 10));
 
 let lastUpdateTime = Date.now();
 let colorUpdateTimer = 0.0;
@@ -1009,7 +1011,19 @@ function drawCheckerboard (fbo) {
 
 function drawDisplay (fbo, width, height) {
     displayMaterial.bind();
-    gl.uniform1i(displayMaterial.uniforms.uTexture, cloud.read.attach(0));
+    switch(config.DRAW_BUFFER){
+        case 'cloud':
+            gl.uniform1i(displayMaterial.uniforms.uTexture, cloud.read.attach(0));
+            break;
+        case 'velocity':
+            gl.uniform1i(displayMaterial.uniforms.uTexture, velocity.read.attach(0));
+            break;
+        case 'pressure':
+            gl.uniform1i(displayMaterial.uniforms.uTexture, pressure.read.attach(0));
+            break;
+        default:
+            gl.uniform1i(displayMaterial.uniforms.uTexture, cloud.read.attach(0));
+    }
     blit(fbo);
 }
 
@@ -1040,8 +1054,8 @@ function multipleSplats (amount) {
         color.b *= 10.0;
         const x = Math.random();
         const y = Math.random();
-        const dx = 100 * (Math.random() - 0.5);
-        const dy = 100 * (Math.random() - 0.5);
+        const dx = 10 * (Math.random() - 0.5);
+        const dy = 10 * (Math.random() - 0.5);
         //const dx = 1000 * (Math.random() - 0.5);
         //const dy = 1000 * (Math.random() - 0.5);
         splat(x, y, dx, dy, color);
