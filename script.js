@@ -180,44 +180,40 @@ const advectionShader = compileShader(gl.FRAGMENT_SHADER, `
 `);
 
 const divergenceShader = compileShader(gl.FRAGMENT_SHADER, `
-    precision highp float;
+    precision mediump float;
     precision mediump sampler2D;
 
-    varying vec2 vUv;
-    varying vec2 vL;
-    varying vec2 vR;
-    varying vec2 vT;
-    varying vec2 vB;
+    varying highp vec2 vUv;
+    varying highp vec2 vL;
+    varying highp vec2 vR;
+    varying highp vec2 vT;
+    varying highp vec2 vB;
     uniform sampler2D uVelocity;
 
-    vec2 sampleVelocity (in vec2 uv) {
-        vec2 multiplier = vec2(1.0, 1.0);
-        if (uv.x < 0.0) { uv.x = 0.0; multiplier.x = -1.0; }
-        if (uv.x > 1.0) { uv.x = 1.0; multiplier.x = -1.0; }
-        if (uv.y < 0.0) { uv.y = 0.0; multiplier.y = -1.0; }
-        if (uv.y > 1.0) { uv.y = 1.0; multiplier.y = -1.0; }
-        return multiplier * texture2D(uVelocity, uv).xy;
-    }
-
     void main () {
-        float L = sampleVelocity(vL).x;
-        float R = sampleVelocity(vR).x;
-        float T = sampleVelocity(vT).y;
-        float B = sampleVelocity(vB).y;
+        float L = texture2D(uVelocity, vL).x;
+        float R = texture2D(uVelocity, vR).x;
+        float T = texture2D(uVelocity, vT).y;
+        float B = texture2D(uVelocity, vB).y;
+        vec2 C = texture2D(uVelocity, vUv).xy;
+        if (vL.x < 0.0) { L = -C.x; }
+        if (vR.x > 1.0) { R = -C.x; }
+        if (vT.y > 1.0) { T = -C.y; }
+        if (vB.y < 0.0) { B = -C.y; }
         float div = 0.5 * (R - L + T - B);
         gl_FragColor = vec4(div, 0.0, 0.0, 1.0);
     }
 `);
 
 const curlShader = compileShader(gl.FRAGMENT_SHADER, `
-    precision highp float;
+    precision mediump float;
     precision mediump sampler2D;
 
-    varying vec2 vUv;
-    varying vec2 vL;
-    varying vec2 vR;
-    varying vec2 vT;
-    varying vec2 vB;
+    varying highp vec2 vUv;
+    varying highp vec2 vL;
+    varying highp vec2 vR;
+    varying highp vec2 vT;
+    varying highp vec2 vB;
     uniform sampler2D uVelocity;
 
     void main () {
@@ -226,13 +222,15 @@ const curlShader = compileShader(gl.FRAGMENT_SHADER, `
         float T = texture2D(uVelocity, vT).x;
         float B = texture2D(uVelocity, vB).x;
         float vorticity = R - L - T + B;
-        gl_FragColor = vec4(vorticity, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(0.5 * vorticity, 0.0, 0.0, 1.0);
     }
 `);
 
+
+
 const vorticityShader = compileShader(gl.FRAGMENT_SHADER, `
     precision highp float;
-    precision mediump sampler2D;
+    precision highp sampler2D;
 
     varying vec2 vUv;
     varying vec2 vL;
@@ -245,40 +243,39 @@ const vorticityShader = compileShader(gl.FRAGMENT_SHADER, `
     uniform float dt;
 
     void main () {
-        float L = texture2D(uCurl, vL).y;
-        float R = texture2D(uCurl, vR).y;
+        float L = texture2D(uCurl, vL).x;
+        float R = texture2D(uCurl, vR).x;
         float T = texture2D(uCurl, vT).x;
         float B = texture2D(uCurl, vB).x;
         float C = texture2D(uCurl, vUv).x;
-        vec2 force = vec2(abs(T) - abs(B), abs(R) - abs(L));
-        force *= 1.0 / length(force + 0.00001) * curl * C;
+        vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));
+        force /= length(force) + 0.0001;
+        force *= curl * C;
+        force.y *= -1.0;
         vec2 vel = texture2D(uVelocity, vUv).xy;
         gl_FragColor = vec4(vel + force * dt, 0.0, 1.0);
     }
 `);
 
+
 const pressureShader = compileShader(gl.FRAGMENT_SHADER, `
-    precision highp float;
+    precision mediump float;
     precision mediump sampler2D;
 
-    varying vec2 vUv;
-    varying vec2 vL;
-    varying vec2 vR;
-    varying vec2 vT;
-    varying vec2 vB;
+    varying highp vec2 vUv;
+    varying highp vec2 vL;
+    varying highp vec2 vR;
+    varying highp vec2 vT;
+    varying highp vec2 vB;
+
     uniform sampler2D uPressure;
     uniform sampler2D uDivergence;
 
-    vec2 boundary (in vec2 uv) {
-        uv = min(max(uv, 0.0), 1.0);
-        return uv;
-    }
-
     void main () {
-        float L = texture2D(uPressure, boundary(vL)).x;
-        float R = texture2D(uPressure, boundary(vR)).x;
-        float T = texture2D(uPressure, boundary(vT)).x;
-        float B = texture2D(uPressure, boundary(vB)).x;
+        float L = texture2D(uPressure, vL).x;
+        float R = texture2D(uPressure, vR).x;
+        float T = texture2D(uPressure, vT).x;
+        float B = texture2D(uPressure, vB).x;
         float C = texture2D(uPressure, vUv).x;
         float divergence = texture2D(uDivergence, vUv).x;
         float pressure = (L + R + B + T - divergence) * 0.25;
@@ -287,27 +284,23 @@ const pressureShader = compileShader(gl.FRAGMENT_SHADER, `
 `);
 
 const gradientSubtractShader = compileShader(gl.FRAGMENT_SHADER, `
-    precision highp float;
+    precision mediump float;
     precision mediump sampler2D;
 
-    varying vec2 vUv;
-    varying vec2 vL;
-    varying vec2 vR;
-    varying vec2 vT;
-    varying vec2 vB;
+    varying highp vec2 vUv;
+    varying highp vec2 vL;
+    varying highp vec2 vR;
+    varying highp vec2 vT;
+    varying highp vec2 vB;
+
     uniform sampler2D uPressure;
     uniform sampler2D uVelocity;
 
-    vec2 boundary (in vec2 uv) {
-        uv = min(max(uv, 0.0), 1.0);
-        return uv;
-    }
-
     void main () {
-        float L = texture2D(uPressure, boundary(vL)).x;
-        float R = texture2D(uPressure, boundary(vR)).x;
-        float T = texture2D(uPressure, boundary(vT)).x;
-        float B = texture2D(uPressure, boundary(vB)).x;
+        float L = texture2D(uPressure, vL).x;
+        float R = texture2D(uPressure, vR).x;
+        float T = texture2D(uPressure, vT).x;
+        float B = texture2D(uPressure, vB).x;
         vec2 velocity = texture2D(uVelocity, vUv).xy;
         velocity.xy -= vec2(R - L, T - B);
         gl_FragColor = vec4(velocity, 0.0, 1.0);
@@ -420,14 +413,14 @@ function pointerPrototype () {
 let pointers = [];
 pointers.push(new pointerPrototype());
 
-for (let i = 0; i < 10; i++) {
-    const color = [Math.random() * 10, Math.random() * 10, Math.random() * 10];
-    const x = canvas.width * Math.random();
-    const y = canvas.height * Math.random();
-    const dx = 1000 * (Math.random() - 0.5);
-    const dy = 1000 * (Math.random() - 0.5);
-    splat(x, y, dx, dy, color);
-}
+// for (let i = 0; i < 10; i++) {
+//     const color = [Math.random() * 10, Math.random() * 10, Math.random() * 10];
+//     const x = canvas.width * Math.random();
+//     const y = canvas.height * Math.random();
+//     const dx = 1000 * (Math.random() - 0.5);
+//     const dy = 1000 * (Math.random() - 0.5);
+//     splat(x, y, dx, dy, color);
+// }
 
 let lastTime = Date.now();
 Update();
