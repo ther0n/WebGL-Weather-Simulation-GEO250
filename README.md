@@ -1,6 +1,6 @@
 # WebGL Weather Simulation
 
-[Play here](https://ther0n.github.io/WebGL-Weather-Simulation/)
+[Play here](https://ther0n.github.io/WebGL-Weather-Simulation-GEO250/)
 
 ## References
 
