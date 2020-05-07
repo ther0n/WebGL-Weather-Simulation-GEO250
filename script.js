@@ -184,7 +184,7 @@ function startGUI () {
     captureFolder.add({ fun: captureScreenshot }, 'fun').name('take screenshot');
 
     let github = gui.add({ fun : () => {
-        window.open('https://github.com/ther0n/WebGL-Weather-Simulation');
+        window.open('https://github.com/ther0n/WebGL-Weather-Simulation-GEO250');
     } }, 'fun').name('Github');
     github.__li.className = 'cr function bigFont';
     github.__li.style.borderLeft = '3px solid #8C8C8C';
