@@ -34,7 +34,7 @@ let config = {
     SIM_RESOLUTION: 256,
     CLOUD_RESOLUTION: 512,
     CAPTURE_RESOLUTION: 512,
-    DENSITY_DISSIPATION: 0.1,
+    DENSITY_DISSIPATION: 0.02,
     VELOCITY_DISSIPATION: 0.02,
     PRESSURE: 0.8,
     PRESSURE_ITERATIONS: 1,
@@ -167,8 +167,8 @@ function startGUI () {
     gui.add(config, 'DRAW_BUFFER', {'condensation/clouds': 'cloud', 'velocity': 'velocity', 'pressure': 'pressure'}).name('display');
     gui.add(config, 'CLOUD_RESOLUTION', { '1024': 1024, '512': 512, '256': 256, '128': 128 }).name('cloud resolution').onFinishChange(initFramebuffers);
     gui.add(config, 'SIM_RESOLUTION', { '32': 32, '64': 64, '128': 128, '256': 256 }).name('sim resolution').onFinishChange(initFramebuffers);
-    gui.add(config, 'DENSITY_DISSIPATION', 0, 1.0).name('cloud dissipation');
-    gui.add(config, 'VELOCITY_DISSIPATION', 0, 1.0).name('velocity dissipation');
+    gui.add(config, 'DENSITY_DISSIPATION', 0, 0.2).name('cloud dissipation');
+    gui.add(config, 'VELOCITY_DISSIPATION', 0, 0.2).name('velocity dissipation');
     gui.add(config, 'PRESSURE', 0.0, 1.0).name('pressure');
     gui.add(config, 'CURL', 0, 10).name('vorticity').step(1);
     gui.add(config, 'SPLAT_RADIUS', 0.01, 1.0).name('splat radius');
